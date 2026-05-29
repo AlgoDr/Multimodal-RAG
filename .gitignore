@@ -1,0 +1,49 @@
+cd "../"   # back to Shipment(GitHub)
+
+cat > .gitignore << 'EOF'
+# Secrets — NEVER push
+.env
+.env.local
+
+# Virtual environment
+ragenv/
+venv/
+.venv/
+
+# Python build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.Python
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Index — plain-text JSON contains document contents, regenerable
+saved_index/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs and dev artifacts
+runlog.txt
+*.log
+
+# Personal documents (if you add private docs later)
+data/DEGREE-*
+data/DL-*
+data/passport*
+data/aadhaar*
+EOF
+
+# build & test notebooks
+notebooks/identity_rag_demo.ipynb
+notebooks/test_notebook.ipynb
