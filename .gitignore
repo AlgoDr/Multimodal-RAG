@@ -1,0 +1,34 @@
+# environment
+.env
+ragenv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# vector index (regenerable — contains plain text in JSON)
+saved_index/
+notebooks/saved_index/
+
+# ChromaDB (regenerable)
+chroma_db/
+notebooks/chroma_db/
+
+# symlinks point here — don't commit the targets
+# (chroma_db and saved_index are excluded above)
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+runlog.txt
+*.log
+
+# personal documents
+data/DEGREE-HD-BLACK.jpg
+data/DEGREE.jpeg
+chroma_db
+saved_index
+chroma_db
+saved_index
