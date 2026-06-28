@@ -256,7 +256,7 @@ For interviewers — this project shows:
 
 ## 👤 Author
 
-**Deepak Rathore** — Software / AI-ML Engineer at DRDO Bengaluru
+**Deepak Rathore** — Software / AI-ML Engineer at Bengaluru
 - GitHub: [@AlgoDr](https://github.com/AlgoDr)
 - LinkedIn: [linkedin.com/in/deepakrathore](https://www.linkedin.com/in/deepak-rathore-7b3b4718b/)
 
