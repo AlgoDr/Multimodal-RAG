@@ -203,3 +203,6 @@ wrapt==2.1.2
 xlsxwriter==3.2.9
 yarl==1.23.0
 python-multipart>=0.0.9
+
+# V3 GUI
+gradio==6.30.0

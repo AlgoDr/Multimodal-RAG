@@ -117,6 +117,7 @@ def root():
             "GET  /health": "server + index status",
             "POST /query" : "ask a question about your documents",
             "POST /ingest": "add a new document to the index",
+            "GET  /ui"    : "Gradio chat GUI",
         }
     }
 
@@ -300,3 +301,17 @@ async def ingest(file: UploadFile = File(...)):
             "No Gemini quota used."
         )
     }
+
+
+# ── Gradio UI mount (V3) ────────────────────────────────────────────────
+# Served at /ui on the same process + port. Shares the lifespan index via
+# attach_external() — no second ChromaDB connection, no second BGE load.
+try:
+    import gradio as gr
+    from ui.app import build_demo, attach_external
+
+    attach_external(lambda: index, lambda: mm_llm)
+    app = gr.mount_gradio_app(app, build_demo(), path="/ui")
+    print("✅ Gradio UI mounted at /ui")
+except Exception as _ui_err:  # gradio missing → API still works standalone
+    print(f"⚠️ Gradio UI not mounted: {_ui_err}")
