@@ -206,3 +206,6 @@ python-multipart>=0.0.9
 
 # V3 GUI
 gradio==6.30.0
+
+# V3 vector store (missing from V2 freeze — present in old ragenv as 0.5.5)
+llama-index-vector-stores-chroma==0.5.5
