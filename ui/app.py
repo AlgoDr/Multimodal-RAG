@@ -17,9 +17,10 @@ from dotenv import load_dotenv
 _UI_DIR = os.path.dirname(os.path.abspath(__file__))   # .../ui/
 _ROOT_DIR = os.path.dirname(_UI_DIR)                     # .../Shipment(V3)/
 
-INDEX_PATH = os.path.join(_ROOT_DIR, "saved_index")
-CHROMA_DB = os.path.join(_ROOT_DIR, "chroma_db")
-DATA_DIR = os.path.join(_ROOT_DIR, "data")
+INDEX_PATH = os.environ.get("INDEX_PATH", os.path.join(_ROOT_DIR, "saved_index"))
+CHROMA_DB = os.environ.get("CHROMA_PATH_OVERRIDE",
+                           os.path.join(_ROOT_DIR, "chroma_db"))
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(_ROOT_DIR, "data"))
 
 # tell engine.py where ChromaDB lives (same override server.py uses)
 os.environ["CHROMA_PATH_OVERRIDE"] = CHROMA_DB

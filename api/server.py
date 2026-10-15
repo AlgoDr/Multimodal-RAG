@@ -23,9 +23,9 @@ from dotenv import load_dotenv
 _API_DIR  = os.path.dirname(os.path.abspath(__file__))   # .../api/
 _ROOT_DIR = os.path.dirname(_API_DIR)                     # .../Shipment(V2)/
 
-INDEX_PATH = os.path.join(_ROOT_DIR, "saved_index")
-CHROMA_DB  = os.path.join(_ROOT_DIR, "chroma_db")
-DATA_DIR   = os.path.join(_ROOT_DIR, "data")
+INDEX_PATH = os.environ.get("INDEX_PATH", os.path.join(_ROOT_DIR, "saved_index"))
+CHROMA_DB  = os.environ.get("CHROMA_PATH_OVERRIDE", os.path.join(_ROOT_DIR, "chroma_db"))
+DATA_DIR   = os.environ.get("DATA_DIR", os.path.join(_ROOT_DIR, "data"))
 
 # tell engine.py where ChromaDB lives (symlink: Shipment(V2)/chroma_db →
 # notebooks/chroma_db)

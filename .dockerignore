@@ -1,0 +1,28 @@
+# secrets — injected at runtime via env / compose, never baked into layers
+.env
+.env.local
+
+# local-only virtualenvs
+ragenv/
+rag-env-v3/
+venv/
+.venv/
+
+# python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# ── mounted at runtime, must NOT be copied into the image ──
+data/
+chroma_db/
+saved_index/
+notebooks/
+
+# dev-only
+experiments/
+.git/
+.gitignore
+.DS_Store
+*.log
+runlog.txt

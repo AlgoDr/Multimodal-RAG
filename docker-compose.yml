@@ -1,0 +1,28 @@
+# Local run:  GOOGLE_API_KEY=... docker compose up --build
+# Then open  http://localhost:8000/ui/   (GUI)
+#           http://localhost:8000/docs  (API)
+services:
+  rag:
+    build: .
+    image: identity-rag:v3
+    ports:
+      - "8000:8000"
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:?GOOGLE_API_KEY must be exported before compose up}
+      CHROMA_PATH_OVERRIDE: /app/chroma_db
+      INDEX_PATH: /app/saved_index
+      DATA_DIR: /app/data
+    volumes:
+      # persist outside the container — ingest survives rebuilds/restarts
+      # chroma_data holds BOTH chroma collections AND saved_index jsons
+      # (server reads INDEX_PATH + CHROMA override from env below)
+      - ./data:/app/data
+      - ./chroma_data:/app/chroma_db
+      - ./chroma_data:/app/saved_index
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s

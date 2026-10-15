@@ -32,3 +32,6 @@ chroma_db
 saved_index
 chroma_db
 saved_index
+
+# local container volume (seeded from notebooks/chroma_db, gitignored)
+chroma_data/
