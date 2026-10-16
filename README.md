@@ -1,21 +1,24 @@
-# 🧠 Multimodal Identity RAG — V2
+# 🧠 Multimodal Identity RAG — V3
 
-> A hybrid multimodal Retrieval-Augmented Generation system over personal documents (certificates, degrees, IDs) — persistent ChromaDB vector storage, hybrid PDF+image retrieval, FastAPI REST endpoint, and incremental document ingestion.
+> A hybrid multimodal Retrieval-Augmented Generation system over personal documents (certificates, degrees, IDs) — persistent ChromaDB vector storage, hybrid PDF+image retrieval, FastAPI REST endpoint, Gradio chat GUI, incremental document ingestion, and Docker packaging.
 
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![LlamaIndex](https://img.shields.io/badge/LlamaIndex-MultiModal-orange.svg)](https://www.llamaindex.ai/)
 [![ChromaDB](https://img.shields.io/badge/vectordb-ChromaDB-blue.svg)](https://www.trychroma.com/)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
+[![Gradio](https://img.shields.io/badge/UI-Gradio-orange.svg)](https://www.gradio.app/)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
 [![Local Embeddings](https://img.shields.io/badge/embeddings-local-green.svg)](https://huggingface.co/BAAI/bge-small-en-v1.5)
 
 > **V1** (notebook-only, SimpleVectorStore) → [see v1.0.0 release](https://github.com/AlgoDr/Multimodal-RAG/releases/tag/v1.0.0)
-> **V2** (this release) → ChromaDB + FastAPI REST API + incremental ingest
+> **V2** (ChromaDB + FastAPI REST API + incremental ingest) → V2 commits on `v2` branch
+> **V3** (this release) → Gradio chat GUI + Docker packaging + fresh `rag-env-v3`
 
 ---
 
 ## ✨ What This Does
 
-Ask natural language questions about your personal documents and get cited answers — whether the content lives in a PDF text layer or inside an image. Query via notebook OR via REST API. Add new documents at runtime without rebuilding the index.
+Ask natural language questions about your personal documents and get cited answers — whether the content lives in a PDF text layer or inside an image. Chat via Gradio GUI, query via notebook OR via REST API, run everything in Docker. Add new documents at runtime without rebuilding the index.
 
 **Real queries that work:**
 
@@ -25,7 +28,8 @@ Ask natural language questions about your personal documents and get cited answe
 | *"Find the certificate signed by Andrew Ng"* | Image caption → BGE → ChromaDB | "Two certificates — Stanford ML + Coursera Structuring ML" |
 | *"List all my certificates with dates"* | Cross-document aggregation | Lists all certificates with dates + sources |
 | *"Show me images that look like certificates"* | CLIP → ChromaDB image store | Ranked images with similarity scores |
-| *Upload new cert via /ingest* | Incremental ChromaDB insert | Immediately queryable — no rebuild, no restart |
+| *Upload new cert via GUI or /ingest* | Incremental ChromaDB insert | Immediately queryable — no rebuild, no restart |
+| *`docker compose up` → open /ui* | CPU-torch container + volumes | Same RAG, portable — healthchecked, persistent |
 
 ---
 
@@ -60,6 +64,8 @@ New document → POST /ingest → single-file extraction → ChromaDB incrementa
 | Vector store | ChromaDB (2 collections, cosine metric) | Persistent, incremental inserts, proper DB semantics |
 | Query LLM | Gemini 2.5 Flash | Free tier sufficient, called only at query time |
 | API layer | FastAPI + uvicorn | Auto-docs, Pydantic validation, lifespan pattern |
+| Chat GUI | Gradio 6 (`ui/app.py`, mounted at `/ui`) | Chat + CLIP gallery + upload; shares the lifespan index, no second backend |
+| Packaging | Docker + compose (CPU torch, volumes) | `identity-rag:v3` — portable, healthchecked, persistent ingest |
 | Query router | Keyword-based intent detection | Visual queries → CLIP, content queries → Gemini |
 
 ---
@@ -67,9 +73,15 @@ New document → POST /ingest → single-file extraction → ChromaDB incrementa
 ## 📁 Project Structure
 
 ```
-Shipment(V2)/
+Shipment(V3)/
 ├── api/
-│   └── server.py                      # FastAPI — POST /query, POST /ingest, GET /health
+│   └── server.py                      # FastAPI — POST /query, POST /ingest, GET /health; mounts Gradio at /ui
+├── ui/
+│   ├── app.py                         # Gradio chat + CLIP gallery + upload (standalone :7860 or mounted /ui)
+│   └── __init__.py
+├── Dockerfile                         # python:3.13-slim, CPU torch, non-root, single uvicorn process
+├── docker-compose.yml                 # volumes: data/, chroma_data/; env: GOOGLE_API_KEY + paths
+├── requirements.docker.txt            # Linux/Docker variant (torch from CPU index, + chromadb/uvicorn)
 ├── data/                              # Personal documents (certificates)
 │   ├── Coursera_aws.pdf
 │   ├── Coursera_Structuring_ML_Projects.pdf
@@ -89,10 +101,11 @@ Shipment(V2)/
 ├── src/
 │   ├── config.py                      # BGE + CLIP + Gemini setup
 │   ├── loader.py                      # PDF + image extraction (retry + single-file mode)
-│   ├── engine.py                      # ChromaDB index + retrieval + query router
+│   ├── engine.py                      # ChromaDB index + retrieval + query router (env-var paths)
 │   └── __init__.py
+├── chroma_data/                       # local container volume (gitignored; seeded from notebooks/chroma_db)
 ├── .env.example                       # API key template
-├── requirements.txt
+├── requirements.txt                   # local venv pins (+ gradio, llama-index-vector-stores-chroma)
 └── README.md
 ```
 
@@ -105,10 +118,11 @@ Shipment(V2)/
 ```bash
 git clone https://github.com/AlgoDr/Multimodal-RAG.git
 cd Multimodal-RAG
-git checkout v2
-python3 -m venv ragenv
-source ragenv/bin/activate          # Windows: ragenv\Scripts\activate
+git checkout v3
+python3.13 -m venv rag-env-v3
+source rag-env-v3/bin/activate      # Windows: rag-env-v3\Scripts\activate
 pip install -r requirements.txt
+# needs git on PATH (CLIP installs from a git URL) + chroma store pin included
 ```
 
 ### 2. Install Tesseract (for OCR fallback on scanned PDFs)
@@ -164,9 +178,19 @@ index = build_index(textual_data, vision_data, "../saved_index")
 
 ---
 
-## 💻 Usage — Two Ways
+## 💻 Usage — Four Ways
 
-### Option A: Notebook
+### Option A: Gradio chat GUI (recommended)
+
+```bash
+# from repo root, venv active
+python ui/app.py
+# → http://localhost:7860 — chat + visual gallery + upload box
+```
+
+Or via the API server (same GUI, shared backend): `uvicorn api.server:app --port 8000` → `http://localhost:8000/ui/`.
+
+### Option B: Notebook
 
 ```python
 from src.engine import load_index, ask_query
@@ -183,14 +207,22 @@ ask_query(index, "Show me images that look like certificates")
 # → displays ranked images inline with CLIP similarity scores
 ```
 
-### Option B: FastAPI REST endpoint
+### Option C: FastAPI REST endpoint
 
 ```bash
-# from Shipment(V2)/
 uvicorn api.server:app --reload --port 8000
 ```
 
 Then open `http://localhost:8000/docs` for interactive Swagger UI — no code needed to test any endpoint.
+
+### Option D: Docker (portable)
+
+```bash
+export GOOGLE_API_KEY=your_gemini_api_key_here
+docker compose up --build
+# → GUI http://localhost:8000/ui/ · API http://localhost:8000/docs
+# volumes persist data/, chroma vectors and index jsons across restarts
+```
 
 ---
 
@@ -353,11 +385,13 @@ Section 2 of the notebook runs each failing parser live — real error messages,
 - [x] ~~FastAPI REST endpoint~~ (V2)
 - [x] ~~Incremental document ingestion via /ingest~~ (V2)
 - [x] ~~Quota-aware error handling~~ (V2)
-- [ ] Gradio web UI → calls FastAPI, quota-aware error display (V2.1)
+- [x] ~~Gradio web UI — chat + CLIP gallery + upload, mounted at /ui~~ (V3)
+- [x] ~~Docker packaging — CPU-torch image + compose volumes~~ (V3)
+- [x] ~~Fresh `rag-env-v3` (python3.13) + missing chroma-store pin~~ (V3)
 - [ ] BGE-reranker — cross-encoder reranking for named entity precision
 - [ ] ColPali or JinaCLIP v2 — document-aware image embeddings
 - [ ] Add `.pptx`, `.docx`, `.mp3` (Whisper STT) extractors
-- [ ] Deploy to Railway/Render (free tier)
+- [ ] Deploy to AWS (EC2 + ECR) — replaces Railway/Render target
 
 ---
 
@@ -373,9 +407,33 @@ Section 2 of the notebook runs each failing parser live — real error messages,
 | Query LLM | Gemini 2.5 Flash |
 | RAG framework | LlamaIndex `MultiModalVectorStoreIndex` |
 | REST API | FastAPI + uvicorn |
+| Chat GUI | Gradio 6 |
+| Packaging | Docker (python:3.13-slim, CPU torch) + compose |
 | File upload | python-multipart |
 | Request validation | Pydantic v2 |
-| Runtime | Python 3.13, Apple Silicon M4 (CPU + MPS) |
+| Local runtime | Python 3.13 venv `rag-env-v3`, Apple Silicon M4 (CPU + MPS) |
+
+---
+
+## 🆕 What Changed in V3 (vs V2)
+
+| Area | V2 | V3 |
+|---|---|---|
+| Interface | API + notebooks only | + Gradio chat GUI (`ui/app.py`) — chat, CLIP gallery, upload box; mounted at `/ui` sharing the lifespan index |
+| Portability | Local venv only | + Docker (`identity-rag:v3`, 4.16GB, CPU torch) + compose with persistent `data/` + `chroma_data/` volumes, healthcheck |
+| Env | `ragenv` (broken torch `libtorch_cpu.dylib`) | Fresh `rag-env-v3` (python3.13) — torch/CLIP/chroma verified; `requirements.txt` += `gradio`, `llama-index-vector-stores-chroma==0.5.5` (was missing from V2 freeze) |
+| Config | Hardcoded `saved_index`/`chroma_db`/`data` paths | `INDEX_PATH` / `CHROMA_PATH_OVERRIDE` / `DATA_DIR` env overrides in `server.py` + `ui/app.py` (container-ready) |
+| Retrieval | Same dual-path BGE + CLIP, `top_k=7` | Unchanged — V3 adds interface + packaging only, no retrieval logic touched |
+
+```bash
+# V3 quickstart (local)
+git checkout v3 && source rag-env-v3/bin/activate
+python ui/app.py                      # GUI :7860
+uvicorn api.server:app --port 8000    # API + /ui on :8000
+
+# V3 quickstart (docker)
+export GOOGLE_API_KEY=... && docker compose up --build   # → :8000/ui
+```
 
 ---
 
@@ -390,6 +448,7 @@ Section 2 of the notebook runs each failing parser live — real error messages,
 7. **Local + cloud cost-aware design** — local BGE + CLIP for indexing (no quota), Gemini only at query time and image captioning
 8. **Systematic parser evaluation** — LlamaParse async bug + Docling MPS float64 incompatibility reproduced live; PyMuPDF selected on evidence
 9. **Honest documentation** — limitations stated with root causes, workarounds documented, known bugs listed with fixes
+10. **Interface + packaging** — Gradio GUI sharing one backend (no duplicate index load), Dockerized CPU-torch image with persistent volumes, container-tested end to end
 
 ---
 
